@@ -43,8 +43,8 @@ export const ShowcaseSection = () => {
              />
           </div>
 
-          {/* Motivational Overlay - Always Visible, Enhanced on Hover */}
-          <div className="absolute bottom-0 left-0 w-full p-8 md:p-16 z-20 flex flex-col md:flex-row md:items-end justify-between gap-6 transform translate-y-2 group-hover:translate-y-0 transition-all duration-700 ease-out">
+          {/* Motivational Overlay - Visible only on Hover / Tap */}
+          <div className="absolute bottom-0 left-0 w-full p-8 md:p-16 z-20 flex flex-col md:flex-row md:items-end justify-between gap-6 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-active:translate-y-0 group-active:opacity-100 transition-all duration-700 ease-out cursor-pointer">
             <div className="max-w-2xl">
               <h3 className="text-3xl md:text-5xl font-heading font-bold uppercase text-white mb-4 tracking-widest drop-shadow-[0_4px_20px_rgba(0,0,0,1)]">
                 The Iron <span className="text-[#d4af37]">Sanctuary</span>

@@ -3,8 +3,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Force perfectly smooth native-like scrolling on mobile devices
-ScrollTrigger.normalizeScroll(true);
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 interface ScrollSequenceConfig {
   frameCount: number;

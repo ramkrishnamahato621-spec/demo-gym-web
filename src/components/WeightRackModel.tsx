@@ -101,22 +101,34 @@ export const WeightRackModel = () => {
       console.error('Loader failed:', error);
     });
 
-    // Eased 360-Degree Mouse Tracking variables
+    // Eased 360-Degree Mouse & Touch Tracking variables
     let targetRotationX = 0;
     let targetRotationY = 0;
     let currentRotationX = 0;
     let currentRotationY = 0;
+    let isInteracting = false;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const updateRotationFromClient = (clientX: number, clientY: number) => {
+      isInteracting = true;
       const rect = container.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-      // Map to full 360 deg rotation horizontally (Math.PI) and limited vertical
-      targetRotationY = x * Math.PI; 
-      targetRotationX = y * (Math.PI / 6); 
+      const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      targetRotationY = x * Math.PI;
+      targetRotationX = y * (Math.PI / 6);
     };
+
+    const handleMouseMove = (e: MouseEvent) => updateRotationFromClient(e.clientX, e.clientY);
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        updateRotationFromClient(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+    const handleInteractEnd = () => { isInteracting = false; };
+
     container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    container.addEventListener('mouseleave', handleInteractEnd);
+    container.addEventListener('touchend', handleInteractEnd);
 
     // Render / Animation Loop
     const clock = new THREE.Clock();
@@ -125,15 +137,19 @@ export const WeightRackModel = () => {
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // Strict short-circuit safety gate
       if (!isLoaded || !modelGroup || loadingError) return;
 
       const elapsedTime = clock.getElapsedTime();
 
-      // Cognitive Anti-Gravity Mechanism (Math.sin hovering)
+      // Cognitive Anti-Gravity Mechanism
       modelGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.15;
 
-      // Eased 360-Degree Tracking using Linear Interpolation (Lerp: 0.05)
+      // Auto rotation if not interacting
+      if (!isInteracting) {
+        targetRotationY += 0.005;
+      }
+
+      // Eased tracking
       const lerpFactor = 0.05;
       currentRotationX += (targetRotationX - currentRotationX) * lerpFactor;
       currentRotationY += (targetRotationY - currentRotationY) * lerpFactor;
@@ -160,12 +176,14 @@ export const WeightRackModel = () => {
     return () => {
       cancelAnimationFrame(animationFrameId);
       container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('mouseleave', handleInteractEnd);
+      container.removeEventListener('touchend', handleInteractEnd);
       window.removeEventListener('resize', handleResize);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
       renderer.dispose();
-      // clean up materials/geometries if needed for rigorous memory management
       scene.clear();
     };
   }, []);
