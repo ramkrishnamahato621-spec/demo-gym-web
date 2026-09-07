@@ -21,21 +21,44 @@ export const ImageSequenceCanvas = ({ frameCount, imagePath, onFrameUpdate, scro
 
     const urls = Array.from({ length: frameCount }, (_, i) => imagePath(i));
     
-    preloadImages(urls).then((loadedImages) => {
-      if (loadedImages.length === 0) return;
-      imagesRef.current = loadedImages;
+    // Create array to hold loaded images
+    const loadedImages = new Array(frameCount).fill(null);
+    imagesRef.current = loadedImages;
+
+    // Load Frame 0 instantly for immediate perceived performance
+    const img0 = new Image();
+    img0.src = urls[0];
+    img0.onload = () => {
+      loadedImages[0] = img0;
       renderFrame(0);
       
+      // Initialize scroll sequence immediately so user doesn't wait
       initScrollSequence({
-        frameCount: loadedImages.length,
+        frameCount: frameCount,
         currentFrame: currentFrame.current,
-        container: scrollContainerRef.current, // Target the specific container for scrolling
+        container: scrollContainerRef.current,
         onUpdate: (frame) => {
           renderFrame(frame);
           if (onFrameUpdate) onFrameUpdate(frame);
         }
       });
-    });
+      
+      // Background load the remaining 99 frames asynchronously
+      const loadRest = async () => {
+        for(let i = 1; i < frameCount; i++) {
+          await new Promise((resolve) => {
+            const img = new Image();
+            img.src = urls[i];
+            img.onload = () => {
+              loadedImages[i] = img;
+              resolve(true);
+            };
+            img.onerror = () => resolve(false);
+          });
+        }
+      };
+      loadRest();
+    };
 
     const renderFrame = (index: number) => {
       const safeIndex = Math.min(index, imagesRef.current.length - 1);
@@ -75,7 +98,7 @@ export const ImageSequenceCanvas = ({ frameCount, imagePath, onFrameUpdate, scro
 
   return (
     <div className="fixed top-0 left-0 w-full h-[100dvh] overflow-hidden z-0 bg-black pointer-events-none">
-      <canvas ref={canvasRef} className="w-full h-full object-cover opacity-80" />
+      <canvas ref={canvasRef} className="w-full h-full object-cover opacity-80" style={{ willChange: 'transform' }} />
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none"></div>
     </div>
   );
