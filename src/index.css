@@ -10,10 +10,6 @@ html, body {
   padding: 0;
   background-color: #000;
   color: #fff;
-  overscroll-behavior-y: none;
-  -webkit-overflow-scrolling: touch;
-  width: 100%;
-  overflow-x: hidden;
 }
 
 @keyframes antigravity {
