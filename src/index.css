@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Inter', sans-serif;
-  --font-heading: 'Oswald', sans-serif;
+  --font-heading: 'Syncopate', sans-serif;
+  --font-sans: 'Montserrat', sans-serif;
 }
 
 html, body {
   margin: 0;
   padding: 0;
   background-color: #000;
-  color: white;
+  color: #fff;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
   width: 100%;
   overflow-x: hidden;
 }
