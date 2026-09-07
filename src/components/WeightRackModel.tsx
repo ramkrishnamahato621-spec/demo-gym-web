@@ -63,7 +63,7 @@ export const WeightRackModel = () => {
     };
 
     const loader = new GLTFLoader(manager);
-    loader.load('/assets/weight-rack.glb', (gltf) => {
+    loader.load(`${import.meta.env.BASE_URL}assets/weight-rack.glb`, (gltf) => {
       const rawModel = gltf.scene;
 
       // Center the model geometry

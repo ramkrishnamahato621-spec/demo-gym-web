@@ -30,7 +30,7 @@ export const Navigation = () => {
               className="flex items-center gap-3 cursor-pointer group"
             >
               <img 
-                src="/logo.jpg" 
+                src={`${import.meta.env.BASE_URL}logo.jpg`}
                 alt="Aura Fitness Logo" 
                 className="w-12 h-12 rounded-full border border-[#d4af37]/30 group-hover:border-[#d4af37] transition-all duration-300 object-cover"
               />
