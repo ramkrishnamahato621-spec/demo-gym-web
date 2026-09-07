@@ -3,10 +3,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: '/demo-gym-web/',
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/demo-gym-web/' : '/',
   plugins: [
     tailwindcss(),
     react()
   ],
-})
+}))
