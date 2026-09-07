@@ -70,7 +70,7 @@ function App() {
   void _showPaymentResult;
 
   return (
-    <div ref={appRef} className="relative w-full min-h-[100dvh] text-white selection:bg-white/30 selection:text-white font-sans overflow-x-hidden bg-black">
+    <div ref={appRef} className="relative w-full min-h-[100dvh] text-white selection:bg-white/30 selection:text-white font-sans bg-black">
 
       {/* Full Page Fixed Animation Background */}
       <ImageSequenceCanvas
