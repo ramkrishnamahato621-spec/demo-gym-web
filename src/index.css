@@ -21,44 +21,4 @@ html, body {
   animation: antigravity 6s ease-in-out infinite;
 }
 
-/* BLINKIT-STYLE MOBILE-FIRST STRICT RULES */
-@media (max-width: 768px) {
-  /* 1. Layout & Anti-Gravity: Ensure flex-column and strictly no horizontal scroll (using clip instead of hidden to prevent iOS scroll lock bugs) */
-  html, body {
-    overflow-x: clip;
-  }
-  
-  .hero-section {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    /* 4. Container Padding: Uniform padding like clean cards */
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-  
-  /* 3. Font Scaling: Fluid typography to prevent overlapping text */
-  .hero-heading {
-    font-size: clamp(1.8rem, 7vw, 2.5rem) !important;
-    line-height: 1.2 !important;
-  }
-  
-  /* 2. Blinkit-Style Button Design */
-  .hero-cta {
-    width: 100% !important;
-    min-height: 48px !important;
-    padding: 12px 24px !important;
-    border-radius: 12px !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    /* Button animation on tap */
-    transition: transform 0.1s ease-out, background-color 0.3s ease-out !important;
-  }
-  
-  .hero-cta:active {
-    transform: scale(0.96) !important;
-    background-color: #ffffff !important;
-  }
-}
+
