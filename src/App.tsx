@@ -37,7 +37,7 @@ function App() {
   const [paymentAmount, setPaymentAmount] = useState(0);
 
   const imagePath = (index: number) =>
-    `/sequence/frame_${(index + 1).toString().padStart(4, '0')}.jpg`;
+    `${import.meta.env.BASE_URL}sequence/frame_${(index + 1).toString().padStart(4, '0')}.jpg`;
 
   // ── Handlers ──
   const handleTrainerClick = (trainer: Trainer) => {
