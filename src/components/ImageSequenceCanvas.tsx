@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { preloadImages } from '../utilities/preloadImages';
 import { initScrollSequence } from '../animations/scrollSequence';
 
 interface ImageSequenceCanvasProps {
