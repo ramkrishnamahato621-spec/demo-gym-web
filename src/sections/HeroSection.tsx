@@ -1,175 +1,70 @@
-// Helper to calculate smooth cinematic styles
-const getStageStyles = (progress: number, start: number, end: number) => {
-  if (progress < start) return { opacity: 0, transform: 'translateY(40px)', filter: 'blur(10px)', pointerEvents: 'none' as 'auto' | 'none' };
-  if (progress > end) return { opacity: 0, transform: 'translateY(-30px)', filter: 'blur(8px)', pointerEvents: 'none' as 'auto' | 'none' };
-
-  const range = end - start;
-  const localP = (progress - start) / range; // 0 to 1
-
-  let opacity = 1;
-  let y = 0;
-  let blur = 0;
-  let scale = 1;
-
-  if (localP < 0.2) { // Fade in
-    const inP = localP / 0.2;
-    opacity = inP;
-    y = 40 * (1 - inP);
-    blur = 10 * (1 - inP);
-    scale = 0.95 + (0.05 * inP);
-  } else if (localP > 0.8) { // Fade out
-    const outP = (localP - 0.8) / 0.2;
-    opacity = 1 - outP;
-    y = -30 * outP;
-    blur = 8 * outP;
-    scale = 1 + (0.05 * outP);
-  }
-
-  return {
-    opacity,
-    transform: `translateY(${y}px) scale(${scale})`,
-    filter: `blur(${blur}px)`,
-    transition: 'opacity 0.1s, transform 0.1s, filter 0.1s',
-    pointerEvents: (opacity > 0.5 ? 'auto' : 'none') as 'auto' | 'none'
-  };
-};
-
 interface HeroSectionProps {
   currentFrame: number;
   totalFrames: number;
 }
 
-export const HeroSection = ({ currentFrame, totalFrames }: HeroSectionProps) => {
-  // We calculate progress relative to the entire page, but for the Hero text, 
-  // we might want it to complete its 5 stages within the first X% of the page.
-  // Since the entire page is the scroll trigger, progress goes 0 to 1 over the ENTIRE website.
-  const globalProgress = currentFrame / (totalFrames - 1); 
-  
-  // We map the first 40% of the entire website scroll to the 5 stages of the Hero section.
-  const progress = Math.min(1, globalProgress * 2.5); 
+export const HeroSection = ({ currentFrame }: HeroSectionProps) => {
+  // Fade out the hero text when the background sequence advances past frame 20
+  const opacity = Math.max(0, 1 - (currentFrame / 20));
+  const translateY = currentFrame * 2; // Smooth parallax push up
 
   return (
-    <section className="relative w-full h-[300vh] font-sans pointer-events-none">
+    <section className="relative w-full h-[100dvh] flex flex-col items-center justify-center px-6">
       
-      <div className="sticky top-0 w-full h-[100dvh] overflow-hidden">
+      {/* Dark gradient for mobile legibility against the background */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0 pointer-events-none"></div>
+
+      {/* Main Premium Hero Content */}
+      <div 
+        className="relative z-10 flex flex-col items-center text-center mt-12 w-full max-w-4xl"
+        style={{ 
+          opacity: opacity,
+          transform: `translateY(-${translateY}px)`,
+          willChange: 'opacity, transform'
+        }}
+      >
+        <div className="inline-block px-5 py-2 rounded-full border border-[#d4af37]/30 bg-[#d4af37]/10 backdrop-blur-md mb-6 animate-pulse shadow-[0_0_15px_rgba(212,175,55,0.1)]">
+          <span className="text-[9px] md:text-[11px] font-bold tracking-[0.3em] text-[#d4af37] uppercase">
+            Elite Performance Sanctuary
+          </span>
+        </div>
         
-        {/* Global Dark Gradient for Mobile Readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent md:hidden"></div>
+        <h1 className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-9xl font-bold tracking-tighter text-white uppercase leading-[1.05] mb-6 drop-shadow-2xl">
+          Your Strongest <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#d4af37] to-gray-400">
+            Version
+          </span>
+        </h1>
+        
+        <p className="text-gray-300 font-medium tracking-[0.2em] text-[10px] md:text-sm uppercase max-w-xl leading-relaxed mb-10 drop-shadow-md">
+          Premium equipment. Purpose-built zones. <br className="hidden md:block" />
+          Everything you need to train harder.
+        </p>
 
-        {/* Content Container */}
-        <div className="absolute inset-0 z-10 max-w-7xl mx-auto px-6 flex flex-col md:flex-row md:items-center">
-          
-          {/* Left/Right Text Alignment constraint */}
-          <div className="w-full h-full md:w-[40%] flex flex-col justify-end pb-24 md:pb-0 md:justify-center relative pointer-events-auto">
-            
-            {/* STAGE 1: 0 - 20% */}
-            <div className="absolute left-0 right-0 md:top-1/2 md:-translate-y-1/2 flex flex-col" style={getStageStyles(progress, 0, 0.22)}>
-              <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-white leading-[1.05] uppercase mb-4">
-                Your<br/>
-                <span className="text-[#d4af37]">Strongest</span><br/>
-                Version
-              </h1>
-              <p className="font-light tracking-[0.3em] text-sm md:text-base uppercase bg-gradient-to-r from-white/50 via-[#d4af37] to-white/50 bg-[length:200%_auto] text-transparent bg-clip-text animate-pulse">
-                It starts with one decision.
-              </p>
-            </div>
-
-            {/* STAGE 2: 20 - 40% */}
-            <div className="absolute left-0 right-0 md:top-1/2 md:-translate-y-1/2 flex flex-col" style={getStageStyles(progress, 0.20, 0.42)}>
-              <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-white leading-[1.05] uppercase mb-4">
-                Built For<br/>
-                <span className="text-[#d4af37]">Performance</span>
-              </h1>
-              <div className="flex flex-col gap-2 border-l-2 border-[#d4af37] pl-4 text-white/70 font-light text-sm md:text-base">
-                <p>Premium equipment.</p>
-                <p>Purpose-built training zones.</p>
-                <p>Everything you need to train harder.</p>
-              </div>
-            </div>
-
-            {/* STAGE 3: 40 - 60% */}
-            <div className="absolute left-0 right-0 md:top-1/2 md:-translate-y-1/2 flex flex-col" style={getStageStyles(progress, 0.40, 0.62)}>
-              <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-white leading-[1.05] uppercase mb-6">
-                Train<br/>
-                Without<br/>
-                Limits
-              </h1>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm px-4 py-2 rounded border border-white/10 w-max">
-                  <span className="text-[#d4af37] font-heading font-bold text-lg">01</span>
-                  <span className="text-white font-medium tracking-wide uppercase text-sm">Strength</span>
-                </div>
-                <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm px-4 py-2 rounded border border-white/10 w-max">
-                  <span className="text-[#d4af37] font-heading font-bold text-lg">02</span>
-                  <span className="text-white font-medium tracking-wide uppercase text-sm">Cardio</span>
-                </div>
-                <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm px-4 py-2 rounded border border-white/10 w-max">
-                  <span className="text-[#d4af37] font-heading font-bold text-lg">03</span>
-                  <span className="text-white font-medium tracking-wide uppercase text-sm">Functional</span>
-                </div>
-              </div>
-            </div>
-
-            {/* STAGE 4: 60 - 85% */}
-            <div className="absolute left-0 right-0 md:top-1/2 md:-translate-y-1/2 flex flex-col" style={getStageStyles(progress, 0.60, 0.86)}>
-              <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-white leading-[1.05] uppercase mb-4">
-                More Than<br/>
-                A Gym.<br/>
-                <span className="text-white/60">A Space To</span><br/>
-                <span className="text-[#d4af37]">Evolve.</span>
-              </h1>
-              <p className="text-white/70 font-light tracking-wide text-sm md:text-base leading-relaxed max-w-xs">
-                Designed for focus.<br/>
-                Built for consistency.<br/>
-                Made for progress.
-              </p>
-            </div>
-
-          </div>
-
-          {/* STAGE 5 (Centered): 85 - 100% */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 pointer-events-auto" style={getStageStyles(progress, 0.85, 1.05)}>
-            <h1 className="font-heading text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-white uppercase mb-4 drop-shadow-2xl">
-              Ready To<br/>
-              <span className="text-[#d4af37]">Level Up?</span>
-            </h1>
-            <p className="tracking-[0.3em] uppercase font-medium mb-10 text-sm md:text-base drop-shadow-md bg-gradient-to-r from-white/50 via-[#d4af37] to-white/50 bg-[length:200%_auto] text-transparent bg-clip-text animate-pulse">
-              Your journey starts here.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <button className="px-10 py-4 bg-[#d4af37] text-black hover:bg-white transition-colors duration-300 font-bold tracking-widest uppercase text-sm w-full sm:w-auto">
-                Join Now →
-              </button>
-              <button className="px-10 py-4 bg-black/40 backdrop-blur-md border border-white/20 text-white hover:bg-white/10 transition-colors duration-300 font-bold tracking-widest uppercase text-sm w-full sm:w-auto">
-                Explore Membership
-              </button>
-            </div>
-          </div>
-
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto z-20">
+          <button 
+            onClick={() => document.querySelector('#membership')?.scrollIntoView({ behavior: 'smooth' })}
+            className="w-full sm:w-auto px-10 md:px-12 py-4 bg-[#d4af37] text-black font-heading font-bold uppercase tracking-widest text-xs md:text-sm hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] cursor-pointer"
+          >
+            Join The Elite
+          </button>
         </div>
-
-        {/* Scroll / Progress Indicator */}
-        <div className="absolute bottom-8 right-8 z-20 flex flex-col items-end gap-2 pointer-events-none hidden md:flex">
-          <div className="text-white/50 font-heading tracking-widest text-sm flex items-center gap-4">
-            {progress < 0.05 ? (
-              <span className="animate-pulse text-[#d4af37]">SCROLL TO EXPLORE ↓</span>
-            ) : (
-              <div className="flex items-center gap-3">
-                <span className="text-white font-bold text-xl">0{Math.min(5, Math.max(1, Math.ceil(progress * 5)))}</span>
-                <span className="text-white/30 text-lg">/ 05</span>
-              </div>
-            )}
-          </div>
-          {/* Progress Bar */}
-          <div className="w-32 h-[2px] bg-white/10 overflow-hidden rounded-full">
-            <div 
-              className="h-full bg-[#d4af37]" 
-              style={{ width: `${progress * 100}%` }}
-            ></div>
-          </div>
-        </div>
-
       </div>
+
+      {/* Mouse / Scroll Indicator */}
+      <div 
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-10 pointer-events-none"
+        style={{ opacity: opacity }}
+      >
+        <span className="text-[8px] md:text-[10px] text-[#d4af37] uppercase tracking-[0.4em] font-bold">
+          Scroll to explore
+        </span>
+        <div className="w-[1px] h-12 md:h-16 bg-white/20 overflow-hidden relative">
+          <div className="w-full h-1/2 bg-[#d4af37] animate-[bounce_2s_infinite]"></div>
+        </div>
+      </div>
+      
     </section>
   );
 };
