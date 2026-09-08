@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { initScrollSequence } from '../animations/scrollSequence';
 
 interface ImageSequenceCanvasProps {
@@ -10,8 +10,25 @@ interface ImageSequenceCanvasProps {
 
 export const ImageSequenceCanvas = ({ frameCount, imagePath, onFrameUpdate, scrollContainerRef }: ImageSequenceCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imagesRef = useRef<HTMLImageElement[]>([]);
+  const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
   const currentFrame = useRef({ frame: 0 });
+  const rafPending = useRef(false);
+  const lastRenderedFrame = useRef(-1);
+
+  // Find the nearest loaded frame to avoid showing blank canvas (anti-glitch)
+  const findNearestLoadedFrame = useCallback((targetFrame: number): number => {
+    const images = imagesRef.current;
+    if (images[targetFrame]) return targetFrame;
+    
+    // Search outward from target in both directions for closest loaded frame
+    for (let offset = 1; offset < frameCount; offset++) {
+      const below = targetFrame - offset;
+      const above = targetFrame + offset;
+      if (below >= 0 && images[below]) return below;
+      if (above < frameCount && images[above]) return above;
+    }
+    return 0; // fallback
+  }, [frameCount]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,49 +38,21 @@ export const ImageSequenceCanvas = ({ frameCount, imagePath, onFrameUpdate, scro
     const urls = Array.from({ length: frameCount }, (_, i) => imagePath(i));
     
     // Create array to hold loaded images
-    const loadedImages = new Array(frameCount).fill(null);
+    const loadedImages = new Array<HTMLImageElement | null>(frameCount).fill(null);
     imagesRef.current = loadedImages;
 
-    // Load Frame 0 instantly for immediate perceived performance
-    const img0 = new Image();
-    img0.src = urls[0];
-    img0.onload = () => {
-      loadedImages[0] = img0;
-      renderFrame(0);
-      
-      // Initialize scroll sequence immediately so user doesn't wait
-      initScrollSequence({
-        frameCount: frameCount,
-        currentFrame: currentFrame.current,
-        container: scrollContainerRef.current,
-        onUpdate: (frame) => {
-          renderFrame(frame);
-          if (onFrameUpdate) onFrameUpdate(frame);
-        }
-      });
-      
-      // Background load the remaining 99 frames asynchronously
-      const loadRest = async () => {
-        for(let i = 1; i < frameCount; i++) {
-          await new Promise((resolve) => {
-            const img = new Image();
-            img.src = urls[i];
-            img.onload = () => {
-              loadedImages[i] = img;
-              resolve(true);
-            };
-            img.onerror = () => resolve(false);
-          });
-        }
-      };
-      loadRest();
-    };
-
+    // Render a specific frame with cover-fit scaling
     const renderFrame = (index: number) => {
-      const safeIndex = Math.min(index, imagesRef.current.length - 1);
-      const img = imagesRef.current[safeIndex];
+      const safeIndex = Math.max(0, Math.min(index, frameCount - 1));
+      // Use nearest loaded frame to prevent blank/glitch
+      const actualIndex = findNearestLoadedFrame(safeIndex);
+      const img = loadedImages[actualIndex];
       
       if (img && canvas && ctx) {
+        // Only re-render if frame actually changed
+        if (lastRenderedFrame.current === actualIndex && canvas.width > 0) return;
+        lastRenderedFrame.current = actualIndex;
+
         const hRatio = canvas.width / img.width;
         const vRatio = canvas.height / img.height;
         const ratio = Math.max(hRatio, vRatio);
@@ -79,21 +68,83 @@ export const ImageSequenceCanvas = ({ frameCount, imagePath, onFrameUpdate, scro
       }
     };
 
+    // Throttled render using rAF to prevent jank on fast scrolling
+    const scheduleRender = (frame: number) => {
+      if (onFrameUpdate) onFrameUpdate(frame);
+      if (!rafPending.current) {
+        rafPending.current = true;
+        requestAnimationFrame(() => {
+          renderFrame(frame);
+          rafPending.current = false;
+        });
+      }
+    };
+
+    // Set canvas size with devicePixelRatio for crisp mobile rendering
     const handleResize = () => {
       if (canvas) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width = `${window.innerWidth}px`;
+        canvas.style.height = `${window.innerHeight}px`;
+        lastRenderedFrame.current = -1; // force re-render
         renderFrame(currentFrame.current.frame);
       }
     };
 
+    // Load a single image as a Promise
+    const loadImage = (index: number): Promise<void> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.src = urls[index];
+        img.onload = () => {
+          loadedImages[index] = img;
+          resolve();
+        };
+        img.onerror = () => resolve(); // skip failed frames silently
+      });
+    };
+
+    // Load strategy: first 5 frames quickly in parallel, then rest sequentially
+    const loadAllFrames = async () => {
+      // Phase 1: Load first 5 frames in parallel for instant hero visibility
+      const firstBatch = Math.min(5, frameCount);
+      await Promise.all(
+        Array.from({ length: firstBatch }, (_, i) => loadImage(i))
+      );
+      
+      // Render frame 0 immediately
+      handleResize();
+      
+      // Init scroll sequence right away so user can start scrolling
+      initScrollSequence({
+        frameCount: frameCount,
+        currentFrame: currentFrame.current,
+        container: scrollContainerRef.current,
+        onUpdate: scheduleRender
+      });
+
+      // Phase 2: Load remaining frames in background, 3 at a time for speed
+      const batchSize = 3;
+      for (let i = firstBatch; i < frameCount; i += batchSize) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + batchSize, frameCount); j++) {
+          batch.push(loadImage(j));
+        }
+        await Promise.all(batch);
+      }
+    };
+
+    loadAllFrames();
+
     window.addEventListener('resize', handleResize);
-    handleResize(); 
 
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [frameCount, imagePath, scrollContainerRef, onFrameUpdate]);
+  }, [frameCount, imagePath, scrollContainerRef, onFrameUpdate, findNearestLoadedFrame]);
 
   return (
     <div className="fixed top-0 left-0 w-full h-[100dvh] overflow-hidden z-0 bg-black pointer-events-none">

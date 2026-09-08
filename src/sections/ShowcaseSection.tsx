@@ -1,6 +1,29 @@
+import { useState, useRef } from 'react';
 import loopVideo from '../assets/loop-videou.mp4';
 
 export const ShowcaseSection = () => {
+  const [showDownload, setShowDownload] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleVideoTap = () => {
+    setShowDownload(true);
+    // Auto-hide after 4 seconds
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setShowDownload(false), 4000);
+  };
+
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const link = document.createElement('a');
+    link.href = loopVideo;
+    link.download = 'aura-fitness-showcase.mp4';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowDownload(false);
+  };
+
   return (
     <section id="showcase" className="w-full py-32 px-6 overflow-hidden relative z-10">
       <div className="max-w-7xl mx-auto">
@@ -25,7 +48,10 @@ export const ShowcaseSection = () => {
         </div>
         
         {/* Cinematic Video Container */}
-        <div className="w-full aspect-[4/5] md:aspect-[21/9] rounded-2xl bg-zinc-950 border border-white/10 relative overflow-hidden group shadow-[0_0_40px_rgba(212,175,55,0.05)] hover:shadow-[0_0_50px_rgba(212,175,55,0.15)] hover:border-[#d4af37]/30 transition-all duration-700">
+        <div 
+          className="w-full aspect-[4/5] md:aspect-[21/9] rounded-2xl bg-zinc-950 border border-white/10 relative overflow-hidden group shadow-[0_0_40px_rgba(212,175,55,0.05)] hover:shadow-[0_0_50px_rgba(212,175,55,0.15)] hover:border-[#d4af37]/30 transition-all duration-700"
+          onClick={handleVideoTap}
+        >
           
           {/* Dynamic Gradient Overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-10 pointer-events-none"></div>
@@ -34,6 +60,7 @@ export const ShowcaseSection = () => {
           {/* Showcase Video */}
           <div className="absolute inset-0">
              <video 
+               ref={videoRef}
                src={loopVideo}
                autoPlay 
                loop 
@@ -41,6 +68,34 @@ export const ShowcaseSection = () => {
                playsInline 
                className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-1000 group-hover:scale-105"
              />
+          </div>
+
+          {/* Download Button — appears on tap/click */}
+          <div 
+            className={`absolute top-4 right-4 z-30 transition-all duration-300 ${
+              showDownload 
+                ? 'opacity-100 translate-y-0 pointer-events-auto' 
+                : 'opacity-0 -translate-y-2 pointer-events-none'
+            }`}
+          >
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-2 px-5 py-3 rounded-full bg-[#d4af37] text-black font-heading font-bold uppercase tracking-widest text-xs hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.4)] active:scale-95 cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download Video
+            </button>
+          </div>
+
+          {/* Tap hint for mobile */}
+          <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-30 md:hidden transition-all duration-300 ${
+            showDownload ? 'opacity-0' : 'opacity-60'
+          }`}>
+            <span className="text-[10px] text-white/70 uppercase tracking-widest font-medium bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
+              Tap for options
+            </span>
           </div>
 
           {/* Motivational Overlay - Visible only on Hover / Tap */}
